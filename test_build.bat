@@ -1,5 +1,5 @@
 @echo off
-pushd
+pushd "%~dp0"
 setlocal
 
 call :build_cxx 23 || exit /b 1
