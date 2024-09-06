@@ -6,8 +6,24 @@
 
 using namespace s2n_str_traits;
 
+// compare the decrypted strings (using plain C-style arrays)
+template<typename Ta, typename Tb, size_t N>
+constexpr bool same_str_data(const Ta (&str_a) [N], const Tb (&str_b) [N]) {
+  for (size_t idx = 0; idx < N; ++idx) {
+    if (str_a[idx] != str_b[idx]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// compare the decrypted strings (using the returned string container instance)
 template<typename Ta, typename Tb>
 constexpr bool same_str_data(const Ta &str_a, const Tb &str_b) {
+  if (str_a.count != str_b.count) {
+    return false;
+  }
+
   for (size_t idx = 0; idx < str_a.count; ++idx) {
     if (str_a.data[idx] != str_b.data[idx]) {
       return false;
@@ -21,13 +37,23 @@ int main()
   {
     constexpr auto smsm = s2n<s2n_cvt::xor_cvt<>>("my super secret");
     constexpr auto smsm_again = s2n<s2n_cvt::xor_cvt<>>("my super secret");
+    constexpr auto smsm_xor = s2n("my super secret");
     constexpr auto smsm_22 = s2n<s2n_cvt::xor_cvt<>>(L"my super secret");
-    constexpr auto smsm_22_u8 = s2n<s2n_cvt::xor_cvt<>>(u8"my super secret");
+    constexpr auto smsm_22_u8 = s2n<s2n_cvt::xor_cvt<288>>(u8"my super secret"); // u8 + custom key
+    constexpr auto smsm_22_u16 = s2n<s2n_cvt::xor_cvt<__TIME__[7] * __TIME__[6]>>(u"my super secret"); // u16 + custom key
     
-    static_assert(smsm_again == smsm, "error");
+    static_assert(smsm == smsm_xor, "error");
+    static_assert(smsm == smsm_again, "error");
 
     static_assert(smsm.can_convert_to_str, "error");
     static_assert(smsm_22.can_convert_to_str, "error");
+    
+    static_assert(same_str_data(smsm.str().data, "my super secret"), "error");
+    static_assert(same_str_data(smsm_22.str().data, L"my super secret"), "error");
+    static_assert(same_str_data(smsm_22_u8.str().data, u8"my super secret"), "error");
+    static_assert(same_str_data(smsm_22_u16.str().data, u"my super secret"), "error");
+
+    static_assert(same_str_data(smsm.str(), smsm_xor.str()), "error");
     static_assert(same_str_data(smsm_22.str(), smsm.str()), "error");
     static_assert(same_str_data(smsm_22.str(), smsm_22_u8.str()), "error");
     static_assert(same_str_data(smsm_22_u8.str(), smsm.str()), "error");

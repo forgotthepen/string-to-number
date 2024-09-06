@@ -32,7 +32,18 @@ A single header library for string manipulation/hashing/encryption.
 // size_t
 #include <cstddef>
 
-// compare the decrypted strings
+// compare the decrypted strings (using plain C-style arrays)
+template<typename Ta, typename Tb, size_t N>
+constexpr bool same_str_data(const Ta (&str_a) [N], const Tb (&str_b) [N]) {
+  for (size_t idx = 0; idx < N; ++idx) {
+    if (str_a[idx] != str_b[idx]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// compare the decrypted strings (using the returned string container instance)
 template<typename Ta, typename Tb>
 constexpr bool same_str_data(const Ta &str_a, const Tb &str_b) {
   if (str_a.count != str_b.count) {
@@ -49,13 +60,16 @@ constexpr bool same_str_data(const Ta &str_a, const Tb &str_b) {
 
 int main()
 {
-  // create 2 strings encrypted with a simple XOR operation (struct s2n_cvt::xor_cvt)
-  constexpr auto my_text = s2n< s2n_cvt::xor_cvt<> >("my super secret");
-  constexpr auto my_text_again = s2n< s2n_cvt::xor_cvt<> >("my super secret");
+  // create strings encrypted with a simple XOR operation (struct s2n_cvt::xor_cvt)
+  constexpr auto my_text_xored = s2n("my super secret"); // defaults to using XOR converter
+  constexpr auto my_text = s2n< s2n_cvt::xor_cvt<> >("my super secret"); // manually specifying the XOR converter
+  constexpr auto my_text_again = s2n< s2n_cvt::xor_cvt<> >("my super secret"); // we'll use this for later comparison
 
   constexpr auto my_text_wide = s2n< s2n_cvt::xor_cvt<> >(L"my super secret"); // wide char
-  constexpr auto my_text_u8 = s2n< s2n_cvt::xor_cvt<> >(u8"my super secret"); // u8 char
-
+  // additionaly you can specify a custom XOR key
+  constexpr auto my_text_u8 = s2n< s2n_cvt::xor_cvt<288> >(u8"my super secret"); // u8 char + custom XOR key
+  constexpr auto my_text_u16 = s2n< s2n_cvt::xor_cvt<__TIME__[7] * __TIME__[6]> >(u"my super secret"); // u16 + custom XOR key
+  
    // comparison is based on:
    // 1. original strings length
    // 2. applying the natural operator '==' on each corresponding element (in encrypted form),
@@ -67,7 +81,10 @@ int main()
   static_assert(my_text_wide.can_convert_to_str, "error");
   // .str() will only be available if the provided converter can recover back the original string
   // the decryption is only performed when this function is called, no unencrypted data is saved
-  static_assert(same_str_data(my_text.str(), my_text_wide.str()), "error");
+  static_assert(same_str_data(my_text.str().data, "my super secret"), "error"); // C-style array
+  static_assert(same_str_data(my_text.str(), my_text_wide.str()), "error"); // string container instances
+  static_assert(same_str_data(my_text.str(), my_text_u8.str()), "error");
+  static_assert(same_str_data(my_text.str(), my_text_u16.str()), "error");
 
   // prints: my secret string = [my super secret], count=15
   std::cout << "my secret string = [" << my_text.str().data << "], count=" << my_text.str_count << std::endl;

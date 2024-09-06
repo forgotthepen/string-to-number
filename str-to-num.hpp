@@ -281,14 +281,16 @@ namespace s2n_cvt {
     template<typename TStr, s2n_sz_t StrCount, typename TChar>
     constexpr static void to_num(TChar (&dst) [StrCount], const TStr& src) noexcept {
       for (s2n_sz_t src_idx = 0; src_idx < StrCount; ++src_idx) {
-        dst[src_idx] = src[src_idx] ^ static_cast<TChar>(VKey ^ src_idx);
+        const auto key2 = (StrCount << (src_idx + 3)) | (src_idx + 3);
+        dst[src_idx] = src[src_idx] ^ static_cast<TChar>(VKey ^ src_idx) ^ static_cast<TChar>(key2);
       }
     }
 
     template<typename TStr, s2n_sz_t StrCount, typename TChar>
     constexpr static void to_str(TChar (&dst) [StrCount + 1], const TChar (&src) [StrCount]) noexcept {
       for (s2n_sz_t src_idx = 0; src_idx < StrCount; ++src_idx) {
-        dst[src_idx] = src[src_idx] ^ static_cast<TChar>(VKey ^ src_idx);
+        const auto key2 = (StrCount << (src_idx + 3)) | (src_idx + 3);
+        dst[src_idx] = src[src_idx] ^ static_cast<TChar>(VKey ^ src_idx) ^ static_cast<TChar>(key2);
       }
     }
   };
@@ -347,7 +349,7 @@ namespace s2n_cvt {
 
 
 // helper function to create s2n instance and avoid manually specifying the string type
-template<typename TConverter, typename TStr>
+template<typename TConverter = s2n_cvt::xor_cvt<>, typename TStr>
 constexpr static auto s2n(const TStr &str) {
   return s2n_basic<TConverter, TStr>(str);
 }
