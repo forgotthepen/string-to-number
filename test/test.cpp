@@ -4,7 +4,6 @@
 #include <iostream> // std::cout
 #include <cstddef> // size_t
 
-using namespace std;
 using namespace s2n_str_traits;
 
 template<typename Ta, typename Tb>

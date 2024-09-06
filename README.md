@@ -3,15 +3,17 @@ A single header library for string manipulation/hashing/encryption.
 
 ## Features:
 * Single header file (`.hpp`) which could be included in any project
-* Zero dependency, no other headers are included, not even from the standard ones
-* Compile-time library, all functions/classes are marked `constexpr`
+* Zero dependency, no other headers are included, even from the standard ones
+* Compile-time library, all functions are marked `constexpr`
 * Provides a generic (`template`) interface to allow integration with different string manipulation/encryption implementations
 * Supports language versions `C++14` and above
 
 ## Use cases:
 * Hiding plain/harcoded strings inside an application, making it much harder to inspect the binary via an assembly debugger
-* Converting strings to other numeric forms with 0-cost at runtime, since the manipulation is done during compilation.  
-  In a rich IDE, you can immediately see the result by hovering over the `constexpr` variable holding the conversion result
+* Converting strings to other numeric forms with 0-cost at runtime, since the conversion is done during compilation.  
+  In a rich IDE, you can immediately see the result by hovering over the `constexpr` variable holding the conversion result  
+  ![hover image](./assets/hover.png)  
+  ![hover image 2](./assets/hover2.png)  
 
 ## Quick usage example:
 ```c++
@@ -26,6 +28,8 @@ A single header library for string manipulation/hashing/encryption.
 
 // std::cout
 #include <iostream>
+// size_t
+#include <cstddef>
 
 // compare the decrypted strings
 template<typename Ta, typename Tb>
@@ -61,16 +65,16 @@ int main()
   return 0;
 }
 ```
-Inspecting this binary via an assembly debugger will not reveal the secret string since it was changed during compilation, the data stored inside the binary is the XOR-ed string.  
+Inspecting this binary via an assembly debugger will not reveal the secret string since it was changed during compilation, the data stored inside the binary is the XOR-ed resulting buffer.  
 
-When the encrypted/manipulated data is changed back to a string, the returned object will be a `structure` with 2 members:
+When the encrypted/manipulated data is changed back to a string, the returned object is a `structure` with 2 members:
 1. `count`: the number of characters in the string, **NOT** the bytes (not including the null terminator)
-2. `data`: a C-style array with constant size = (`count` + 1) (+1 for the null terminator)
+2. `data`: a C-style array with constant size = (`count` + 1), +1 for the null terminator
 
 
 ## Adding your custom converter
 ### Mandatory **string-to-number** conversion function
-1. Create a `struct`, it could be templated just like the `s2n_cvt::xor_cvt` which comes with the library
+1. Create a `struct`, it could be templated like the built-in `s2n_cvt::xor_cvt`
 2. Provide a function called `to_num`, which must satisfy the following:
    - Defined as `constexpr`
    - Have a `static` storage specifier
@@ -101,7 +105,7 @@ When the encrypted/manipulated data is changed back to a string, the returned ob
 
    Check the built-in converters `s2n_cvt::xor_cvt` and `s2n_cvt::hash_fnv_1a_64` for an actual example
 
-### Optional **number-to-string** conversion function (if your converter supports it)
+### Optional **number-to-string** conversion function (if your converter supports recovering back the original string)
 * Provide a function called `to_str`, which must satisfy the following:
    - Defined as `constexpr`
    - Have a `static` storage specifier
@@ -119,7 +123,7 @@ When the encrypted/manipulated data is changed back to a string, the returned ob
      ```c++
      TChar (&dst) [StrCount + 1]
      ```
-     This is the destination buffer, allocated by the library, which you have to fill with the unencrypted characters/items. It's size is more than the original string by 1 for the null terminator, you don't have to write the null terminator, it is done automatically by the library
+     This is the destination buffer, allocated by the library, you have to fill with the unencrypted characters/items. It's size is more than the original string by 1 for the null terminator, you don't have to write the null terminator, it is done automatically by the library
     - The second function parameter must be
       ```c++
       const TChar (&src) [StrCount]
@@ -133,10 +137,10 @@ When the encrypted/manipulated data is changed back to a string, the returned ob
   ```c++
   char my_array[0]; // compiler error
   ```
-  But many hashing algorithms support empty strings, so to workaround this problem the library would create a 1-element array and the value of that element would be null `'\0'`  
+  But many hashing algorithms support empty strings (`""`), to workaround this problem the library creates a 1-element array whose value is null `'\0'`  
 
-* Microsoft's compiler doesn't set the proper value for standard macro `__cplusplus`, you have to add this `/Zc:__cplusplus` to the compiler flags, more info: https://learn.microsoft.com/en-us/cpp/build/reference/zc-cplusplus
-* Starting from `C++17` the exception specification for a function (`noexcept`) became a mandatory part for `typedef` statements, and the library takes care of that automatically.  
+* Microsoft's compiler doesn't set the proper value for the standard macro `__cplusplus`, you have to add this `/Zc:__cplusplus` to the compiler flags, more info: https://learn.microsoft.com/en-us/cpp/build/reference/zc-cplusplus
+* Starting from `C++17` the exception specification for a function (`noexcept`) is a mandatory part for `typedef` statements, and the library takes care of that automatically.  
 But if for example you set the macro `S2N_CPP_VERSION` to `201402L` (`C++14`) while the compiler was targeting language version `C++17` or above, this will result in an error since the library would be looking for the function `to_num()` **WITHOUT** `noexcept` specification, which would fail on `C++17` or above.  
 Always rely on the standard macro `__cplusplus`, otherwise set the macro `S2N_CPP_VERSION` carefully.
 

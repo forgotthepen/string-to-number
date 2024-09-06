@@ -2,6 +2,10 @@ name: Test (Windows)
 
 on:
   push:
+    paths:
+      - '**.cpp'
+      - '**.hpp'
+      - '**.bat'
   workflow_dispatch:
   pull_request:
 
