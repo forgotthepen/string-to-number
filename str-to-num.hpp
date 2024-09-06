@@ -30,6 +30,7 @@ SOFTWARE.
   #define S2N_CPP_VERSION __cplusplus 
 #endif
 
+// https://en.cppreference.com/w/cpp/preprocessor/replace
 #if S2N_CPP_VERSION < 201402L
   #error "C++14 or greater is required"
 #endif
@@ -213,6 +214,26 @@ public:
   struct str_container {
     constexpr static s2n_sz_t count = str_count;
     TChar data[str_count + 1]{};
+
+    constexpr void clear() {
+      for (s2n_sz_t idx = 0; idx < str_count; ++idx) {
+        // data[idx] = TChar(); // easy to detect
+        data[idx] += str_count ^ (idx + 1);
+        data[idx] *= idx + 2;
+        data[idx] ^= idx + 3;
+      }
+
+      data[str_count] = str_count * (data[0] + 1);
+      data[str_count] ^= (data[0] - 1);
+    }
+
+    // constant destruction is available since C++20: https://en.cppreference.com/w/cpp/language/constexpr
+#if S2N_CPP_VERSION >= 202002L
+    constexpr ~str_container() {
+      clear();
+    }
+#endif
+
   };
 
   constexpr static const bool can_convert_to_str = decltype(to_str_defined<TStringCvt>(nullptr))::value;
@@ -316,8 +337,8 @@ namespace s2n_cvt {
       }
 
       for (s2n_sz_t src_idx = 0; src_idx < StrCount; src_idx++) {
-        hash = hash ^ src[src_idx];
-        hash = hash * FNV_prime;
+        hash ^= src[src_idx];
+        hash *= FNV_prime;
       }
     }
   };

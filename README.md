@@ -77,9 +77,11 @@ int main()
 ```
 Inspecting this binary via an assembly debugger will not reveal the secret string since it was changed during compilation, the data stored inside the binary is the XOR-ed resulting buffer.  
 
-When the encrypted/manipulated data is changed back to a string, the returned object is a `structure` with 2 members:
+When the encrypted/manipulated data is changed back to a string, the returned object is a `structure` with 3 members:
 1. `count`: the number of characters in the string, **NOT** the bytes (not including the null terminator)
 2. `data`: a C-style array with constant size = (`count` + 1), +1 for the null terminator
+3. `void clear()`: a function to clear the data buffer manually after usage, ensuring it is not still available on the stack.  
+   For `C++20` and above, a `constexpr` destructor is automatically invoked when the decrypted string goes out of scope
 
 
 ## Adding your custom converter
