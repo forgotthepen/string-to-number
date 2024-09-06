@@ -7,6 +7,7 @@ A single header library for string manipulation/hashing/encryption.
 * Compile-time library, all functions are marked `constexpr`
 * Provides a generic (`template`) interface to allow integration with different string manipulation/encryption implementations
 * Supports language versions `C++14` and above
+* Compare the encrypted data with the natural `==` operator
 
 ## Use cases:
 * Hiding plain/harcoded strings inside an application, making it much harder to inspect the binary via an assembly debugger
@@ -50,7 +51,16 @@ int main()
 {
   // create 2 strings encrypted with a simple XOR operation (struct s2n_cvt::xor_cvt)
   constexpr auto my_text = s2n< s2n_cvt::xor_cvt<> >("my super secret");
+  constexpr auto my_text_again = s2n< s2n_cvt::xor_cvt<> >("my super secret");
+
   constexpr auto my_text_wide = s2n< s2n_cvt::xor_cvt<> >(L"my super secret"); // wide char
+  constexpr auto my_text_u8 = s2n< s2n_cvt::xor_cvt<> >(u8"my super secret"); // u8 char
+
+   // comparison is based on:
+   // 1. original strings length
+   // 2. applying the natural operator '==' on each corresponding element (in encrypted form),
+   //    might return false positive if the encryption is weak
+  static_assert(my_text_again == my_text, "error"); // compare the encrypted data, not the original str
   
   // can_convert_to_str() will be 'true' if the converter supports recovering back the string
   static_assert(my_text.can_convert_to_str, "error");

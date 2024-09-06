@@ -20,11 +20,17 @@ int main()
 {
   {
     constexpr auto smsm = s2n<s2n_cvt::xor_cvt<>>("my super secret");
+    constexpr auto smsm_again = s2n<s2n_cvt::xor_cvt<>>("my super secret");
     constexpr auto smsm_22 = s2n<s2n_cvt::xor_cvt<>>(L"my super secret");
+    constexpr auto smsm_22_u8 = s2n<s2n_cvt::xor_cvt<>>(u8"my super secret");
     
+    static_assert(smsm_again == smsm, "error");
+
     static_assert(smsm.can_convert_to_str, "error");
     static_assert(smsm_22.can_convert_to_str, "error");
     static_assert(same_str_data(smsm_22.str(), smsm.str()), "error");
+    static_assert(same_str_data(smsm_22.str(), smsm_22_u8.str()), "error");
+    static_assert(same_str_data(smsm_22_u8.str(), smsm.str()), "error");
     
     std::cout << "my secret string = [" << smsm.str().data << "], count=" << smsm.str_count << std::endl;
   }
