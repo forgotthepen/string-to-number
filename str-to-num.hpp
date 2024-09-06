@@ -210,7 +210,8 @@ private:
   TOut m_data{};
 
 public:
-  // use a container since TConverter::to_str() will return an array
+  // container for the decrypted/restored string
+  // using a container since TConverter::to_str() will return an array
   struct str_container {
     constexpr static s2n_sz_t count = str_count;
     TChar data[str_count + 1]{};
@@ -218,13 +219,13 @@ public:
     constexpr void clear() {
       for (s2n_sz_t idx = 0; idx < str_count; ++idx) {
         // data[idx] = TChar(); // easy to detect
-        data[idx] += str_count ^ (idx + 1);
-        data[idx] *= idx + 2;
+        data[idx] += str_count ^ (idx + 3);
+        data[idx] *= idx + 3;
         data[idx] ^= idx + 3;
       }
 
-      data[str_count] = str_count * (data[0] + 1);
-      data[str_count] ^= (data[0] - 1);
+      data[str_count] = str_count * (data[0] + 3);
+      data[str_count] ^= (data[0] - 3);
     }
 
     // constant destruction is available since C++20: https://en.cppreference.com/w/cpp/language/constexpr
@@ -282,7 +283,7 @@ namespace s2n_cvt {
     constexpr static void to_num(TChar (&dst) [StrCount], const TStr& src) noexcept {
       for (s2n_sz_t src_idx = 0; src_idx < StrCount; ++src_idx) {
         const auto key2 = (StrCount << (src_idx + 3)) | (src_idx + 3);
-        dst[src_idx] = src[src_idx] ^ static_cast<TChar>(VKey ^ src_idx) ^ static_cast<TChar>(key2);
+        dst[src_idx] = static_cast<TChar>(src[src_idx] ^ VKey ^ (src_idx + 12) ^ key2);
       }
     }
 
@@ -290,7 +291,7 @@ namespace s2n_cvt {
     constexpr static void to_str(TChar (&dst) [StrCount + 1], const TChar (&src) [StrCount]) noexcept {
       for (s2n_sz_t src_idx = 0; src_idx < StrCount; ++src_idx) {
         const auto key2 = (StrCount << (src_idx + 3)) | (src_idx + 3);
-        dst[src_idx] = src[src_idx] ^ static_cast<TChar>(VKey ^ src_idx) ^ static_cast<TChar>(key2);
+        dst[src_idx] = static_cast<TChar>(src[src_idx] ^ VKey ^ (src_idx + 12) ^ key2);
       }
     }
   };

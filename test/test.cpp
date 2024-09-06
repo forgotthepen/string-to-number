@@ -89,6 +89,21 @@ int main()
     std::cout << std::hex << "FNV 1a = 0x" << smsm33.data() << std::endl;
   }
 
+  {
+    constexpr auto clear_me_after_use = s2n("my super secret");
+
+    {
+      constexpr auto actual_str_constexpr = clear_me_after_use.str();
+      static_assert(same_str_data(actual_str_constexpr.data, "my super secret"), "error");
+    }
+
+    auto actual_str = clear_me_after_use.str();
+    std::cout << std::hex << "actual str = [" << actual_str.data << "]" << std::endl;
+    actual_str.clear(); // CANNOT BE RECOVERED
+    // invalid use, we have to call .str() again to get a new instance
+    // std::cout << std::hex << "actual str = [" << actual_str.data << "]" << std::endl;
+  }
+
 
   using tt1 = str_char_t<char (&) [4]>;
   using tt2 = str_char_t<const char (&) [4]>;
