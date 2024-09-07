@@ -35,6 +35,13 @@ constexpr bool same_str_data(const Ta &str_a, const Tb &str_b) {
 int main()
 {
   {
+    // support manipulation at rutime also, this must compile
+    // if s2n ctor() was marked consteval this won't work
+    static char txt[] = "Aaa";
+    auto smsmrt = s2n(txt);
+  }
+
+  {
     constexpr auto smsm = s2n<s2n_cvt::xor_cvt<>>("my super secret");
     constexpr auto smsm_again = s2n<s2n_cvt::xor_cvt<>>("my super secret");
     constexpr auto smsm_xor = s2n("my super secret");
