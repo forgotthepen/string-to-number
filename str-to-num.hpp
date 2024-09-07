@@ -39,9 +39,9 @@ SOFTWARE.
 // starting from C++17 onwards it is legal (and required to use) as part of typedef
 // https://en.cppreference.com/w/cpp/language/except_spec
 #if S2N_CPP_VERSION < 201703L
-  #define CPP17_TYPEDEF_NOEXCEPT
+  #define S2N_TYPEDEF_NOEXCEPT
 #else
-  #define CPP17_TYPEDEF_NOEXCEPT noexcept
+  #define S2N_TYPEDEF_NOEXCEPT noexcept
 #endif
 
 
@@ -183,7 +183,7 @@ private:
   template<typename>
   struct cvt_to_num_p1;
   template<typename TRet, typename TP1, typename... TParams>
-  struct cvt_to_num_p1<TRet(*)(TP1, TParams...) CPP17_TYPEDEF_NOEXCEPT> {
+  struct cvt_to_num_p1<TRet(*)(TP1, TParams...) S2N_TYPEDEF_NOEXCEPT> {
     using type = TP1;
   };
   template<typename TPFn>
@@ -197,7 +197,7 @@ private:
     )>
   >;
 
-  using to_str_signature = void(*)(TChar(&)[str_count + 1], const TChar(&)[str_count]) CPP17_TYPEDEF_NOEXCEPT;
+  using to_str_signature = void(*)(TChar(&)[str_count + 1], const TChar(&)[str_count]) S2N_TYPEDEF_NOEXCEPT;
 
   // SFINAE to check if TConverter::to_str() exists
   template <typename TC>
@@ -217,15 +217,12 @@ public:
     TChar data[str_count + 1]{};
 
     constexpr void clear() {
-      for (s2n_sz_t idx = 0; idx < str_count; ++idx) {
+      for (s2n_sz_t idx = 0; idx <= str_count; ++idx) { // include null char
         // data[idx] = TChar(); // easy to detect
         data[idx] += str_count ^ (idx + 3);
         data[idx] *= idx + 3;
         data[idx] ^= idx + 3;
       }
-
-      data[str_count] = str_count * (data[0] + 3);
-      data[str_count] ^= (data[0] - 3);
     }
 
     // constant destruction is available since C++20: https://en.cppreference.com/w/cpp/language/constexpr
@@ -283,7 +280,7 @@ namespace s2n_cvt {
     constexpr static void to_num(TChar (&dst) [StrCount], const TStr& src) noexcept {
       for (s2n_sz_t src_idx = 0; src_idx < StrCount; ++src_idx) {
         const auto key2 = (StrCount << (src_idx + 3)) | (src_idx + 3);
-        dst[src_idx] = static_cast<TChar>(src[src_idx] ^ VKey ^ (src_idx + 12) ^ key2);
+        dst[src_idx] = static_cast<TChar>(src[src_idx] ^ VKey ^ (src_idx + 12) ^ key2) ^ 0x0F;
       }
     }
 
@@ -291,7 +288,7 @@ namespace s2n_cvt {
     constexpr static void to_str(TChar (&dst) [StrCount + 1], const TChar (&src) [StrCount]) noexcept {
       for (s2n_sz_t src_idx = 0; src_idx < StrCount; ++src_idx) {
         const auto key2 = (StrCount << (src_idx + 3)) | (src_idx + 3);
-        dst[src_idx] = static_cast<TChar>(src[src_idx] ^ VKey ^ (src_idx + 12) ^ key2);
+        dst[src_idx] = static_cast<TChar>(src[src_idx] ^ VKey ^ (src_idx + 12) ^ key2 ^ 0x0F);
       }
     }
   };
