@@ -251,13 +251,13 @@ public:
   
   template<typename TConverterOther, typename TStrOther>
   constexpr bool operator!=(const s2n_basic<TConverterOther, TStrOther> &other) const noexcept {
-    return !( this == other );
+    return !( *this == other );
   }
 
   template<typename TCvt = TStringCvt,
-		// we have to use the function template param, otherwise it is a hard error
-		s2n_traits::allowed_if_t<decltype(to_str_defined<TCvt>(nullptr))::value, bool> = true
-	> 
+    // we have to use the function template param, otherwise it is a hard error
+    s2n_traits::allowed_if_t<decltype(to_str_defined<TCvt>(nullptr))::value, bool> = true
+  > 
   constexpr str_container str() const noexcept {
     str_container dec{};
     TStringCvt::template to_str<TStr, str_count, TChar>(dec.data, static_cast<const TChar(&)[str_count]>(m_data));
